@@ -1,0 +1,31 @@
+#cloud-config
+package_upgrade: true
+
+# bootcmd:
+#   # Because of https://github.com/MicrosoftDocs/azure-docs/issues/82500
+#   - systemctl mask waagent-apt.service
+
+packages:
+  - apache2-utils
+
+runcmd:
+  # Install node js
+  # Based on https://github.com/nodesource/distributions/blob/master/README.md
+  - 'curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - '
+  - 'sudo apt-get install -y nodejs'
+  - 'sudo npm install -g npm@8.5.2'
+  # Implement Node.js Server to run as service via pm2
+  - 'git clone https://github.com/cpinotossi/cptdlb.git jserver1'
+  - 'git clone https://github.com/cpinotossi/cptdlb.git jserver2'
+  - 'sed -i "s|0.0.0.0|<INTERFACEIP1>|g" ./jserver1/nodejs/.env'
+  - 'sed -i "s|0.0.0.0|<INTERFACEIP2>|g" ./jserver2/nodejs/.env'
+  - 'sed -i "s|red|green|g" ./jserver2/nodejs/.env'
+  - 'cd /jserver1/nodejs'
+  - 'npm install'
+  - 'npm install pm2 -g'
+  - 'chmod +x server.js'
+  - 'pm2 start server.js'
+  - 'cd /jserver2/nodejs'
+  - 'npm install'
+  - 'chmod +x server.js'
+  - 'pm2 start server.js'
